@@ -71,7 +71,7 @@ Plugin directories must be at the repo root — Claude Code's marketplace does n
 }
 ```
 
-Pi recursively scans each directory listed in `pi.skills` for any file named `SKILL.md`, so the nested `*/skills/*/SKILL.md` structure works without additional configuration.
+**Security best practice**: Explicitly list each plugin directory rather than a parent directory that contains multiple plugins. Pi recursively scans each listed directory for `SKILL.md` files. This approach gives you control over which plugin directories are included without exposing unintended plugins or accidentally scanning parent directories.
 
 ### `.claude-plugin/marketplace.json` (Claude Code)
 
@@ -115,7 +115,7 @@ Claude Code discovers skills from the `skills/` subdirectory within each plugin.
 
 | Platform | Manifest | Install | Discovery |
 |----------|----------|---------|-----------|
-| **Pi** | `package.json` → `pi.skills` | `pi install npm:@org/skills-devops` | Recursively scans directories for `SKILL.md` files |
+| **Pi** | `package.json` → `pi.skills` | `pi install npm:@org/skills-devops` | Explicitly list each plugin directory; Pi recursively scans each for `SKILL.md` files |
 | **OpenClaw** | — | `clawhub install skills-devops` | Requires publishing to ClawHub registry; or manually place skill folder in `skills/` |
 | **Claude Code** | `.claude-plugin/marketplace.json` | `/plugin install code-review@skills-devops` | Each skill is a separate, toggleable plugin; skills in `skills/` subdir |
 
