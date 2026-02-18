@@ -17,7 +17,7 @@ Public skills by Circles Inc. Each skill works across Pi, Claude Code, and OpenC
 # Add marketplace
 /plugin marketplace add circlesac/skills
 
-# Install individual skills
+# Install plugins
 /plugin install cross-agent-skills
 /plugin install cross-platform-cli
 ```

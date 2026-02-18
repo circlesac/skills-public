@@ -244,9 +244,40 @@ skills/run/
     └── validate.sh       # executable (Claude Code only — shell expansion)
 ```
 
+## README Install Instructions
+
+Add a **Skills** section to your repo's README so users know how to install:
+
+```markdown
+## Skills
+
+| Skill | Description |
+|-------|-------------|
+| **skill-name** | Short description |
+
+### Claude Code
+
+\```bash
+# Add marketplace
+/plugin marketplace add org/repo-name
+
+# Install plugin
+/plugin install plugin-name
+\```
+
+### Pi
+
+\```bash
+pi install npm:@org/package-name
+\```
+```
+
+Use the **skill name** from SKILL.md frontmatter in the table, the **plugin name** from `plugin.json` in the install command, and the **npm package name** from `package.json` for Pi.
+
 ## Summary
 
 1. **Write SKILL.md once** — follows Agent Skills spec, works everywhere
 2. **Always provide `marketplace.json` + `plugin.json`** — Claude Code needs both. Use `"source": "./"` for repo-root plugins.
 3. **Add `package.json` with `pi.skills`** for Pi/OpenClaw
-4. **Publish to npm + ClawHub + git** — npm (Pi), ClawHub (OpenClaw), git (Claude Code)
+4. **Add install instructions to README** — skill table + Claude Code / Pi install commands
+5. **Publish to npm + ClawHub + git** — npm (Pi), ClawHub (OpenClaw), git (Claude Code)
