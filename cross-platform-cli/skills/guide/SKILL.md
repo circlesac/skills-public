@@ -27,10 +27,12 @@ my-cli/
 ├── .github/
 │   └── workflows/
 │       └── release.yml     # Multi-job release pipeline
-└── .npmrc                  # Scoped registry config
+└── .npmrc                  # Scoped registry config (if needed)
 ```
 
 Three distribution channels from one repo. No versions in git — oneup fills them at release time.
+
+`.npmrc` is needed when a scope is used across multiple registries (e.g. publishing `@org/my-cli` to the public npm registry while also using `@org/*` packages from a private registry). It pins the scope to the correct registry. Unscoped packages or scopes that only use one registry don't need it.
 
 ## npm Wrapper
 
