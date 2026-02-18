@@ -1,6 +1,6 @@
 {
   "name": "skills",
-  "owner": { "name": "Circles" },
+  "owner": { "name": "Circles Inc." },
   "plugins": [
     {
       "name": "cross-agent-skills",

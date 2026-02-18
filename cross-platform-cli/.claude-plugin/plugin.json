@@ -1,6 +1,5 @@
 {
   "name": "cross-platform-cli",
-  "version": "26.2.0",
   "description": "Guide for building and distributing Rust CLIs across npm, Homebrew, and GitHub Releases",
-  "author": { "name": "Circles" }
+  "author": { "name": "Circles Inc." }
 }

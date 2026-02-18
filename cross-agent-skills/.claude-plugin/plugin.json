@@ -1,6 +1,5 @@
 {
   "name": "cross-agent-skills",
-  "version": "26.2.0",
   "description": "Create and manage skill packages that work across Pi, Claude Code, and OpenClaw",
-  "author": { "name": "Circles" }
+  "author": { "name": "Circles Inc." }
 }
