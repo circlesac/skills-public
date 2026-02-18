@@ -1,22 +1,35 @@
 ---
 name: cross-platform-cli
-description: Guide for building and distributing Rust CLIs across npm, Homebrew, and GitHub Releases — use when scaffolding a new CLI project or setting up release pipelines
+description: Guide for building and distributing compiled CLIs across npm, Homebrew, and GitHub Releases — use when scaffolding a new CLI project or setting up release pipelines
 ---
 
 # Cross-Platform CLI Distribution
 
-How to structure a Rust CLI so it can be installed via `cargo install`, `npm install -g`, and `brew install` — all from the same repo, using GitHub Actions for automated releases.
+How to structure a compiled CLI so it can be installed via `npm install -g`, `brew install`, and direct download — all from the same repo, using GitHub Actions for automated releases.
 
-Real example: [oneup](https://github.com/circlesac/oneup) (CalVer version management CLI).
+Works with any language that produces standalone binaries: Rust, Go, Zig, Bun, etc.
+
+Real example: [oneup](https://github.com/circlesac/oneup) (CalVer version management CLI, built with Rust).
+
+## Artifact Naming Convention
+
+Use simple `{name}-{os}-{arch}` names for release artifacts:
+
+| Platform | Artifact name | Archive |
+|----------|--------------|---------|
+| macOS ARM | `my-cli-darwin-arm64` | `.tar.gz` |
+| macOS Intel | `my-cli-darwin-amd64` | `.tar.gz` |
+| Linux x64 | `my-cli-linux-amd64` | `.tar.gz` |
+| Linux ARM | `my-cli-linux-arm64` | `.tar.gz` |
+| Windows x64 | `my-cli-windows-amd64` | `.zip` |
+
+The binary inside the archive is always named `my-cli` (or `my-cli.exe` on Windows). This convention is language-agnostic and matches what Go, Zig, and container tooling use.
 
 ## Project Structure
 
 ```
 my-cli/
-├── Cargo.toml              # Rust crate metadata + dependencies (version = "0.0.0")
-├── Cargo.lock
-├── src/
-│   └── main.rs             # CLI entry point (clap for arg parsing)
+├── src/                    # Source code (language-specific)
 ├── package.json            # npm wrapper — postinstall downloads the binary (versionless)
 ├── bin/
 │   ├── my-cli              # Node shim that launches the native binary
@@ -29,6 +42,8 @@ my-cli/
 │       └── release.yml     # Multi-job release pipeline
 └── .npmrc                  # Scoped registry config (if needed)
 ```
+
+Plus language-specific files at the root (e.g. `Cargo.toml`, `go.mod`, `build.zig`, `tsconfig.json`).
 
 Three distribution channels from one repo. No versions in git — oneup fills them at release time.
 
@@ -50,7 +65,7 @@ The npm package doesn't bundle the binary — it downloads the platform-specific
 }
 ```
 
-No `"version"` field — oneup writes it before `npm publish`. `files` controls what gets published to npm. Only `bin/` is included — Rust source stays out.
+No `"version"` field — oneup writes it before `npm publish`. `files` controls what gets published to npm. Only `bin/` is included — source stays out.
 
 If the repo also ships skills (has `pi.skills`), add `"skills"` to `files` so the skill files get published to npm:
 
@@ -95,11 +110,11 @@ const { version } = require("../package.json");
 const REPO = "org/my-cli";
 
 const PLATFORMS = {
-  "darwin-x64":  { artifact: "my-cli-x86_64-apple-darwin",       ext: ".tar.gz" },
-  "darwin-arm64": { artifact: "my-cli-aarch64-apple-darwin",      ext: ".tar.gz" },
-  "linux-x64":   { artifact: "my-cli-x86_64-unknown-linux-gnu",  ext: ".tar.gz" },
-  "linux-arm64":  { artifact: "my-cli-aarch64-unknown-linux-gnu", ext: ".tar.gz" },
-  "win32-x64":   { artifact: "my-cli-x86_64-pc-windows-msvc",    ext: ".zip"    },
+  "darwin-x64":   { artifact: "my-cli-darwin-amd64",   ext: ".tar.gz" },
+  "darwin-arm64":  { artifact: "my-cli-darwin-arm64",   ext: ".tar.gz" },
+  "linux-x64":    { artifact: "my-cli-linux-amd64",    ext: ".tar.gz" },
+  "linux-arm64":   { artifact: "my-cli-linux-arm64",    ext: ".tar.gz" },
+  "win32-x64":    { artifact: "my-cli-windows-amd64",  ext: ".zip"    },
 };
 
 async function download(url) {
@@ -165,16 +180,18 @@ INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 ARCH=$(uname -m)
 
+case "$ARCH" in
+  x86_64)  ARCH="amd64" ;;
+  aarch64) ARCH="arm64" ;;
+esac
+
 case "$OS-$ARCH" in
-  darwin-arm64)  TARGET="aarch64-apple-darwin" ;;
-  darwin-x86_64) TARGET="x86_64-apple-darwin" ;;
-  linux-aarch64) TARGET="aarch64-unknown-linux-gnu" ;;
-  linux-x86_64)  TARGET="x86_64-unknown-linux-gnu" ;;
+  darwin-arm64|darwin-amd64|linux-amd64|linux-arm64) ;;
   *) echo "Unsupported platform: $OS-$ARCH"; exit 1 ;;
 esac
 
 VERSION=$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" | grep '"tag_name"' | cut -d'"' -f4)
-URL="https://github.com/$REPO/releases/download/$VERSION/my-cli-$TARGET.tar.gz"
+URL="https://github.com/$REPO/releases/download/$VERSION/my-cli-$OS-$ARCH.tar.gz"
 
 echo "Installing my-cli $VERSION..."
 curl -fsSL "$URL" | tar xz -C "$INSTALL_DIR"
@@ -201,23 +218,23 @@ class MyCli < Formula
 
   on_macos do
     on_arm do
-      url "https://github.com/org/my-cli/releases/download/v#{version}/my-cli-aarch64-apple-darwin.tar.gz"
+      url "https://github.com/org/my-cli/releases/download/v#{version}/my-cli-darwin-arm64.tar.gz"
       sha256 "SHA_DARWIN_ARM64"
     end
     on_intel do
-      url "https://github.com/org/my-cli/releases/download/v#{version}/my-cli-x86_64-apple-darwin.tar.gz"
-      sha256 "SHA_DARWIN_X64"
+      url "https://github.com/org/my-cli/releases/download/v#{version}/my-cli-darwin-amd64.tar.gz"
+      sha256 "SHA_DARWIN_AMD64"
     end
   end
 
   on_linux do
     on_arm do
-      url "https://github.com/org/my-cli/releases/download/v#{version}/my-cli-aarch64-unknown-linux-gnu.tar.gz"
+      url "https://github.com/org/my-cli/releases/download/v#{version}/my-cli-linux-arm64.tar.gz"
       sha256 "SHA_LINUX_ARM64"
     end
     on_intel do
-      url "https://github.com/org/my-cli/releases/download/v#{version}/my-cli-x86_64-unknown-linux-gnu.tar.gz"
-      sha256 "SHA_LINUX_X64"
+      url "https://github.com/org/my-cli/releases/download/v#{version}/my-cli-linux-amd64.tar.gz"
+      sha256 "SHA_LINUX_AMD64"
     end
   end
 
@@ -242,14 +259,16 @@ brew install org/tap/my-cli
 A multi-job pipeline triggered manually via `workflow_dispatch`. No version commits — the version job calculates the next version once, writes it to target files, and shares them via artifact upload. Downstream jobs download the versioned files instead of running oneup independently.
 
 ```
-version → build (matrix) → github-release → publish-crates
-                                           → publish-npm
+version → build (matrix) → github-release → publish-npm
                                            → publish-homebrew
+                                           → publish-registry (language-specific, optional)
 ```
 
 `softprops/action-gh-release` creates the tag via `tag_name`, so no separate tag job is needed.
 
 ### Full workflow
+
+The build job uses a placeholder `BUILD STEPS GO HERE` — see [Language-Specific Build Steps](#language-specific-build-steps) for the actual build commands per language.
 
 ```yaml
 name: Release
@@ -270,36 +289,39 @@ jobs:
       - name: Calculate version
         id: bump
         run: |
-          VERSION=$(npx --yes @circlesac/oneup version --target Cargo.toml --target package.json | tail -1)
+          VERSION=$(npx --yes @circlesac/oneup version --target package.json | tail -1)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - uses: actions/upload-artifact@v4
         with:
           name: versioned-files
-          path: |
-            Cargo.toml
-            package.json
+          path: package.json   # Add other version files as needed (Cargo.toml, etc.)
 
   build:
     needs: version
     strategy:
       matrix:
         include:
-          - target: x86_64-apple-darwin
-            os: macos-latest
-            name: my-cli-x86_64-apple-darwin
-          - target: aarch64-apple-darwin
-            os: macos-latest
-            name: my-cli-aarch64-apple-darwin
-          - target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
-            name: my-cli-x86_64-unknown-linux-gnu
-          - target: aarch64-unknown-linux-gnu
-            os: ubuntu-latest
-            name: my-cli-aarch64-unknown-linux-gnu
-          - target: x86_64-pc-windows-msvc
-            os: windows-latest
-            name: my-cli-x86_64-pc-windows-msvc
+          - os: macos-latest
+            target_os: darwin
+            target_arch: arm64
+            name: my-cli-darwin-arm64
+          - os: macos-latest
+            target_os: darwin
+            target_arch: amd64
+            name: my-cli-darwin-amd64
+          - os: ubuntu-latest
+            target_os: linux
+            target_arch: amd64
+            name: my-cli-linux-amd64
+          - os: ubuntu-latest
+            target_os: linux
+            target_arch: arm64
+            name: my-cli-linux-arm64
+          - os: windows-latest
+            target_os: windows
+            target_arch: amd64
+            name: my-cli-windows-amd64
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -309,31 +331,17 @@ jobs:
         with:
           name: versioned-files
 
-      - name: Install cross-compilation tools
-        if: matrix.target == 'aarch64-unknown-linux-gnu'
-        run: sudo apt-get install -y gcc-aarch64-linux-gnu
-
-      - name: Add target
-        run: rustup target add ${{ matrix.target }}
-
-      - name: Build
-        run: cargo build --release --target ${{ matrix.target }}
-        env:
-          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+      # ── BUILD STEPS GO HERE ──
+      # See "Language-Specific Build Steps" section.
+      # Must produce a binary at: ./my-cli (or ./my-cli.exe on Windows)
 
       - name: Package (Unix)
         if: matrix.os != 'windows-latest'
-        run: |
-          cd target/${{ matrix.target }}/release
-          tar czf ../../../${{ matrix.name }}.tar.gz my-cli
-          cd ../../..
+        run: tar czf ${{ matrix.name }}.tar.gz my-cli
 
       - name: Package (Windows)
         if: matrix.os == 'windows-latest'
-        run: |
-          cd target/${{ matrix.target }}/release
-          7z a ../../../${{ matrix.name }}.zip my-cli.exe
-          cd ../../..
+        run: 7z a ${{ matrix.name }}.zip my-cli.exe
         shell: bash
 
       - uses: actions/upload-artifact@v4
@@ -359,20 +367,6 @@ jobs:
             artifacts/**/*.tar.gz
             artifacts/**/*.zip
             bin/install.sh
-
-  publish-crates:
-    needs: [version, github-release]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: versioned-files
-
-      - run: cargo publish --allow-dirty
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
   publish-npm:
     needs: [version, github-release]
@@ -409,10 +403,10 @@ jobs:
           GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |
           VERSION=${{ needs.version.outputs.version }}
-          SHA_DARWIN_ARM64=$(shasum -a 256 artifacts/my-cli-aarch64-apple-darwin/*.tar.gz | cut -d' ' -f1)
-          SHA_DARWIN_X64=$(shasum -a 256 artifacts/my-cli-x86_64-apple-darwin/*.tar.gz | cut -d' ' -f1)
-          SHA_LINUX_ARM64=$(shasum -a 256 artifacts/my-cli-aarch64-unknown-linux-gnu/*.tar.gz | cut -d' ' -f1)
-          SHA_LINUX_X64=$(shasum -a 256 artifacts/my-cli-x86_64-unknown-linux-gnu/*.tar.gz | cut -d' ' -f1)
+          SHA_DARWIN_ARM64=$(shasum -a 256 artifacts/my-cli-darwin-arm64/*.tar.gz | cut -d' ' -f1)
+          SHA_DARWIN_AMD64=$(shasum -a 256 artifacts/my-cli-darwin-amd64/*.tar.gz | cut -d' ' -f1)
+          SHA_LINUX_ARM64=$(shasum -a 256 artifacts/my-cli-linux-arm64/*.tar.gz | cut -d' ' -f1)
+          SHA_LINUX_AMD64=$(shasum -a 256 artifacts/my-cli-linux-amd64/*.tar.gz | cut -d' ' -f1)
 
           git clone https://x-access-token:${GH_TOKEN}@github.com/org/homebrew-tap.git
           cd homebrew-tap
@@ -420,16 +414,140 @@ jobs:
           cp ../homebrew/my-cli.rb.template Formula/my-cli.rb
           sed -i "s/VERSION_PLACEHOLDER/${VERSION}/g" Formula/my-cli.rb
           sed -i "s/SHA_DARWIN_ARM64/${SHA_DARWIN_ARM64}/g" Formula/my-cli.rb
-          sed -i "s/SHA_DARWIN_X64/${SHA_DARWIN_X64}/g" Formula/my-cli.rb
+          sed -i "s/SHA_DARWIN_AMD64/${SHA_DARWIN_AMD64}/g" Formula/my-cli.rb
           sed -i "s/SHA_LINUX_ARM64/${SHA_LINUX_ARM64}/g" Formula/my-cli.rb
-          sed -i "s/SHA_LINUX_X64/${SHA_LINUX_X64}/g" Formula/my-cli.rb
+          sed -i "s/SHA_LINUX_AMD64/${SHA_LINUX_AMD64}/g" Formula/my-cli.rb
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Formula/my-cli.rb
           git commit -m "Update my-cli to ${VERSION}"
           git push
+```
 
+## Language-Specific Build Steps
+
+Replace the `BUILD STEPS GO HERE` placeholder in the build job with one of these.
+
+### Rust
+
+Add `Cargo.toml` as a oneup `--target` and to the versioned-files artifact.
+
+Build matrix needs Rust-specific target triples. Replace the matrix with:
+
+```yaml
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            rust_target: aarch64-apple-darwin
+            name: my-cli-darwin-arm64
+          - os: macos-latest
+            rust_target: x86_64-apple-darwin
+            name: my-cli-darwin-amd64
+          - os: ubuntu-latest
+            rust_target: x86_64-unknown-linux-gnu
+            name: my-cli-linux-amd64
+          - os: ubuntu-latest
+            rust_target: aarch64-unknown-linux-gnu
+            name: my-cli-linux-arm64
+          - os: windows-latest
+            rust_target: x86_64-pc-windows-msvc
+            name: my-cli-windows-amd64
+```
+
+Build steps:
+
+```yaml
+      - name: Install cross-compilation tools
+        if: matrix.rust_target == 'aarch64-unknown-linux-gnu'
+        run: sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Add Rust target
+        run: rustup target add ${{ matrix.rust_target }}
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.rust_target }}
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+
+      - name: Copy binary
+        run: cp target/${{ matrix.rust_target }}/release/my-cli${{ matrix.os == 'windows-latest' && '.exe' || '' }} .
+        shell: bash
+```
+
+Optional: add a `publish-crates` job after `github-release`:
+
+```yaml
+  publish-crates:
+    needs: [version, github-release]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: versioned-files
+      - run: cargo publish --allow-dirty
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+```
+
+### Go
+
+```yaml
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build
+        run: go build -o my-cli${{ matrix.os == 'windows-latest' && '.exe' || '' }} .
+        env:
+          GOOS: ${{ matrix.target_os }}
+          GOARCH: ${{ matrix.target_arch }}
+          CGO_ENABLED: "0"
+```
+
+Go cross-compiles natively — no extra toolchains needed. All matrix entries run on any OS, but building on the target OS is simpler for CGO-dependent projects.
+
+### Zig
+
+```yaml
+      - uses: mlugg/setup-zig@v2
+
+      - name: Build
+        run: |
+          zig build -Doptimize=ReleaseSafe -Dtarget=${{ matrix.zig_target }}
+          cp zig-out/bin/my-cli${{ matrix.os == 'windows-latest' && '.exe' || '' }} .
+```
+
+Add `zig_target` to the matrix (e.g. `aarch64-macos`, `x86_64-linux-gnu`, `x86_64-windows`). Zig cross-compiles natively like Go.
+
+### Bun
+
+```yaml
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Build
+        run: bun build --compile --target=bun-${{ matrix.target_os }}-${{ matrix.target_arch }} src/index.ts --outfile my-cli
+```
+
+`bun build --compile` produces standalone single-file executables. Cross-compilation is built in via `--target`. No extra toolchains needed.
+
+Note: Bun's compile targets use the same `{os}-{arch}` convention: `bun-darwin-arm64`, `bun-linux-x64`, `bun-windows-x64`. Map `amd64` to `x64` in the matrix if needed:
+
+```yaml
+        include:
+          - os: macos-latest
+            target_os: darwin
+            target_arch: arm64
+            bun_target: bun-darwin-arm64
+            name: my-cli-darwin-arm64
+          - os: macos-latest
+            target_os: darwin
+            target_arch: amd64
+            bun_target: bun-darwin-x64
+            name: my-cli-darwin-amd64
+          # ... etc
 ```
 
 ## npm Trusted Publishing (OIDC)
@@ -449,26 +567,27 @@ For scoped packages (`@org/name`), `--access public` is needed on first publish 
 
 ## Build Targets
 
-Standard Rust cross-compilation targets for CLI distribution:
+Standard targets for CLI distribution:
 
-| Platform | Target | Runner | Notes |
-|----------|--------|--------|-------|
-| macOS Intel | x86_64-apple-darwin | macos-latest | |
-| macOS ARM | aarch64-apple-darwin | macos-latest | |
-| Linux x64 | x86_64-unknown-linux-gnu | ubuntu-latest | |
-| Linux ARM | aarch64-unknown-linux-gnu | ubuntu-latest | Needs `gcc-aarch64-linux-gnu` |
-| Windows x64 | x86_64-pc-windows-msvc | windows-latest | Packaged as .zip |
+| Platform | OS | Arch | Runner | Notes |
+|----------|-----|------|--------|-------|
+| macOS ARM | darwin | arm64 | macos-latest | Apple Silicon |
+| macOS Intel | darwin | amd64 | macos-latest | |
+| Linux x64 | linux | amd64 | ubuntu-latest | |
+| Linux ARM | linux | arm64 | ubuntu-latest | May need cross-compilation toolchain |
+| Windows x64 | windows | amd64 | windows-latest | Packaged as .zip |
 
-macOS builds (both Intel and ARM) run on `macos-latest`. Linux ARM cross-compiles on ubuntu with the aarch64 linker.
+macOS builds (both Intel and ARM) run on `macos-latest`. Linux ARM may require cross-compilation depending on the language (Rust needs `gcc-aarch64-linux-gnu`; Go and Zig cross-compile natively).
 
 ## Required GitHub Secrets
 
 | Secret | Used by | Purpose |
 |--------|---------|---------|
-| `CARGO_REGISTRY_TOKEN` | publish-crates | crates.io API token |
 | `HOMEBREW_TAP_TOKEN` | publish-homebrew | PAT with write access to the homebrew-tap repo |
 
 npm uses OIDC Trusted Publishing — no secret needed. See "npm Trusted Publishing" section above.
+
+Language-specific registries may need additional secrets (e.g. `CARGO_REGISTRY_TOKEN` for crates.io).
 
 ## Triggering a Release
 

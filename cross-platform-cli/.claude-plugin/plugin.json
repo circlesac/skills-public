@@ -1,5 +1,5 @@
 {
   "name": "cross-platform-cli",
-  "description": "Guide for building and distributing Rust CLIs across npm, Homebrew, and GitHub Releases",
+  "description": "Guide for building and distributing compiled CLIs across npm, Homebrew, and GitHub Releases",
   "author": { "name": "Circles Inc." }
 }
