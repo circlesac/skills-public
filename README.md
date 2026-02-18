@@ -4,7 +4,7 @@ Meta-skills for building CLI tools and packaging them as AI skills.
 
 Started with [mcp-docs-server](https://github.com/circlesac/mcp-docs-server) — bundled docs as MCP prompts so agents could use them as slash commands. Two problems: Claude Code didn't reliably surface MCP prompts as slash commands, and prompts only run when you explicitly invoke them. ACL was on the roadmap but auth is always painful to build.
 
-Skills fix all of this. A `SKILL.md` file works as both a slash command and ambient context the agent picks up on its own. Deployed via npm or git, so access control is just repo visibility — no auth layer needed.
+Skills fix all of this. A `SKILL.md` file works as both a slash command and ambient context the agent picks up on its own. Deployed via npm or git, so access control is just repo visibility — no auth layer needed. Compare this to the manual symlink setup in [pi-skills](https://github.com/badlogic/pi-skills) — `/cross-agent-skills` handles all the packaging boilerplate so you just write a `SKILL.md` and ship it.
 
 ## Available Skills
 
@@ -41,7 +41,8 @@ Each repo ships both a binary and a skill. The agent calls the CLI directly — 
 ### Pi
 
 ```bash
-pi install npm:@circlesac/skills
+pi install git:circlesac/skills
+# or: npx @mariozechner/pi-coding-agent install git:circlesac/skills
 ```
 
 ## License

@@ -157,7 +157,8 @@ For multiple plugins, list each directory:
 /plugin install my-tool
 
 # Pi
-pi install npm:@org/my-tool
+pi install git:org/my-tool
+# or: npx @mariozechner/pi-coding-agent install git:org/my-tool
 
 # OpenClaw
 clawhub install my-tool
@@ -268,7 +269,8 @@ Add a **Skills** section to your repo's README so users know how to install:
 ### Pi
 
 \```bash
-pi install npm:@org/package-name
+pi install git:org/repo-name
+# or: npx @mariozechner/pi-coding-agent install git:org/repo-name
 \```
 ```
 
