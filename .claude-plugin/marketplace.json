@@ -11,6 +11,11 @@
       "name": "cross-platform-cli",
       "source": "./cross-platform-cli",
       "description": "Guide for building and distributing Rust CLIs across npm, Homebrew, and GitHub Releases"
+    },
+    {
+      "name": "gog",
+      "source": "./gog",
+      "description": "Reference guide for the gog CLI — interact with Gmail (search, read, send, attachments, drafts) from the terminal"
     }
   ]
 }

@@ -1,0 +1,5 @@
+{
+  "name": "gog",
+  "description": "Reference guide for the gog CLI — interact with Gmail (search, read, send, attachments, drafts) from the terminal",
+  "author": { "name": "Circles Inc." }
+}

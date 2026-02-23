@@ -2,9 +2,9 @@
   "name": "@circlesac/skills",
   "version": "26.2.0",
   "description": "Public skills by Circles Inc.",
-  "files": ["cross-agent-skills", "cross-platform-cli"],
+  "files": ["cross-agent-skills", "cross-platform-cli", "gog"],
   "pi": {
-    "skills": ["./cross-agent-skills", "./cross-platform-cli"]
+    "skills": ["./cross-agent-skills", "./cross-platform-cli", "./gog"]
   },
   "license": "MIT"
 }
