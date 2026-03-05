@@ -283,8 +283,42 @@ gog gmail send --account=EMAIL \
   --body="Thanks, received."
 ```
 
+### Send an email with an HTML table
+
+Use `--body-html` for HTML content. `--body` and `--body-file` are treated as plain text and will not render HTML.
+
+```bash
+gog gmail send --account=EMAIL \
+  --to="recipient@example.com" \
+  --subject="Subject" \
+  --body-html="<html><body>
+<p>본문 내용</p>
+<table border=\"1\" cellpadding=\"6\" cellspacing=\"0\" style=\"border-collapse:collapse\">
+  <tr><th>이름</th><th>이메일</th></tr>
+  <tr><td>Alice</td><td>alice@example.com</td></tr>
+</table>
+</body></html>"
+```
+
+For longer HTML, write to a variable first:
+
+```bash
+HTML="<html><body>
+<table border=\"1\" cellpadding=\"6\" cellspacing=\"0\" style=\"border-collapse:collapse\">
+  <tr><th>Col1</th><th>Col2</th></tr>
+  <tr><td>A</td><td>B</td></tr>
+</table>
+</body></html>"
+
+gog gmail send --account=EMAIL \
+  --to="recipient@example.com" \
+  --subject="Subject" \
+  --body-html="$HTML"
+```
+
 ## Tips
 
+- **테이블이나 서식이 있는 이메일은 반드시 `--body-html` 사용.** `--body`와 `--body-file`은 plain text로 처리되므로 HTML/markdown이 그대로 노출됨
 - Gmail message/thread IDs are hex strings (e.g., `19c8023ff8229cd2`)
 - Thread search returns threads; message search returns individual messages
 - Email signatures often appear as `image001.png`, `image002.png` etc. — filter these when processing attachments
