@@ -1,5 +1,5 @@
 {
   "name": "gog",
-  "description": "Reference guide for the gog CLI — interact with Gmail (search, read, send, attachments, drafts) from the terminal",
+  "description": "Google Workspace CLI for Gmail, Calendar, Drive, Contacts, Sheets, and Docs",
   "author": { "name": "Circles Inc." }
 }
