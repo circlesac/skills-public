@@ -32,7 +32,7 @@ my-cli/
 ├── src/                    # Source code (language-specific)
 ├── package.json            # npm wrapper — postinstall downloads the binary (versionless)
 ├── bin/
-│   ├── my-cli              # Node shim that launches the native binary
+│   ├── my-cli.mjs          # Node shim that launches the native binary
 │   ├── install.js          # Binary downloader (runs on npm install)
 │   └── install.sh          # Standalone curl-pipe installer for direct install
 ├── homebrew/
@@ -59,7 +59,7 @@ The npm package doesn't bundle the binary — it downloads the platform-specific
 {
   "name": "@scope/my-cli",
   "description": "What my CLI does",
-  "bin": { "my-cli": "bin/my-cli" },
+  "bin": { "my-cli": "bin/my-cli.mjs" },
   "files": ["bin"],
   "scripts": { "postinstall": "node bin/install.js" }
 }
@@ -76,7 +76,7 @@ If the repo also ships skills (has `pi.skills`), add `"skills"` to `files` so th
 }
 ```
 
-### bin/my-cli (Node shim)
+### bin/my-cli.mjs (Node shim)
 
 ```js
 #!/usr/bin/env node
