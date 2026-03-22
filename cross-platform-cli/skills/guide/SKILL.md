@@ -564,6 +564,28 @@ Requirements:
 - `repository` field in `package.json` matching the GitHub repo URL
 - First publish must use a traditional token; OIDC works from the second publish onward
 
+### Initial publish with private registry
+
+When a scope (e.g. `@org`) is configured to point to a private registry in `~/.npmrc`, the first publish to npmjs.org requires a temporary `.npmrc` that overrides the scope registry:
+
+```bash
+# Create temp .npmrc pointing scope to public npm
+cat > /tmp/.npmrc-public << 'EOF'
+@org:registry=https://registry.npmjs.org/
+//registry.npmjs.org/:_authToken=<YOUR_NPM_TOKEN>
+EOF
+
+# Publish with temp config (empty package to claim the name for OIDC setup)
+cd my-cli
+npm version 0.0.1 --no-git-tag-version
+npm publish --access public --userconfig /tmp/.npmrc-public
+
+# Clean up
+rm /tmp/.npmrc-public
+```
+
+After the initial publish, configure OIDC Trusted Publishing on npmjs.com and all subsequent publishes go through GitHub Actions without tokens.
+
 Provenance attestation (`--provenance`) is automatically generated with Trusted Publishing. The published package shows a "Built and signed on GitHub Actions" badge on npmjs.com.
 
 For scoped packages (`@org/name`), `--access public` is needed on first publish only. Subsequent publishes retain the access level.
